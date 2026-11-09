@@ -33,6 +33,7 @@ import dev.anilbeesetti.nextplayer.feature.player.state.rememberControlsVisibili
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberCuesState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberErrorState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberPictureInPictureState
+import dev.anilbeesetti.nextplayer.feature.player.state.rememberRotationState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberSeekGestureState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberSubtitlePositionState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberTapGestureState
@@ -119,6 +120,7 @@ internal fun MediaPlayerContent(
         onEvent = { onAction(PlayerAction.OnVideoZoomEvent(event = it)) },
     )
     val brightnessState = if (!isPreview) rememberBrightnessState() else null
+    val rotationState = rememberRotationState(resetKey = api)
     val volumeAndBrightnessGestureState = if (volumeState != null && brightnessState != null) {
         rememberVolumeAndBrightnessGestureState(
             volumeState = volumeState,
@@ -127,8 +129,10 @@ internal fun MediaPlayerContent(
             rightGesture = playerPreferences.effectiveRightSwipeGesture,
             onPlaylistSwipe = { direction ->
                 if (direction > 0 && player.hasNextMediaItem()) {
+                    rotationState?.preserveCurrentOrientation()
                     player.seekToNextMediaItem()
                 } else if (direction < 0 && player.hasPreviousMediaItem()) {
+                    rotationState?.preserveCurrentOrientation()
                     player.seekToPreviousMediaItem()
                 }
             },
@@ -143,6 +147,7 @@ internal fun MediaPlayerContent(
             player = player,
             screenOrientation = playerPreferences.playerScreenOrientation,
             orientationOverride = api?.orientation,
+            rotationState = rotationState,
         )
     }
     val errorState = rememberErrorState(player = player)

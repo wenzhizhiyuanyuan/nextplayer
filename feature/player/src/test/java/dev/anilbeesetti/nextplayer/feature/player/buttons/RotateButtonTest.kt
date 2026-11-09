@@ -1,6 +1,7 @@
 package dev.anilbeesetti.nextplayer.feature.player.buttons
 
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableStateOf
@@ -14,6 +15,7 @@ import dev.anilbeesetti.nextplayer.core.model.ScreenOrientation
 import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.theme.NextPlayerTheme
 import dev.anilbeesetti.nextplayer.feature.player.state.PlayerOrientationEffect
+import dev.anilbeesetti.nextplayer.feature.player.state.RotationState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -115,6 +117,80 @@ class RotateButtonTest {
                     ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
                     composeRule.activity.requestedOrientation,
                 )
+            }
+        } finally {
+            composeRule.runOnIdle { player.release() }
+        }
+    }
+
+    @Test
+    fun playlistSwipePreservesPortraitAndLandscapeAcrossVideoSizeChanges() {
+        val player = composeRule.runOnIdle { TestPlayer() }
+        val rotation = RotationState(composeRule.activity)
+        try {
+            composeRule.setContent {
+                PlayerOrientationEffect(
+                    player = player,
+                    screenOrientation = ScreenOrientation.VIDEO_ORIENTATION,
+                    rotationState = rotation,
+                )
+            }
+            for (orientation in listOf(
+                Configuration.ORIENTATION_PORTRAIT,
+                Configuration.ORIENTATION_LANDSCAPE,
+            )) {
+                val expected = if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                } else {
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                }
+                composeRule.runOnIdle {
+                    composeRule.activity.resources.configuration.orientation = orientation
+                    rotation.preserveCurrentOrientation()
+                    player.updateVideoSize(
+                        VideoSize(
+                            360,
+                            640,
+                        ),
+                    )
+                }
+                composeRule.runOnIdle {
+                    assertEquals(
+                        expected,
+                        composeRule.activity.requestedOrientation,
+                    )
+                    player.updateVideoSize(
+                        VideoSize(
+                            640,
+                            360,
+                        ),
+                    )
+                }
+                composeRule.runOnIdle {
+                    assertEquals(
+                        expected,
+                        composeRule.activity.requestedOrientation,
+                    )
+                    rotation.rotate()
+                }
+                composeRule.runOnIdle {
+                    player.updateVideoSize(
+                        VideoSize(
+                            360,
+                            640,
+                        ),
+                    )
+                }
+                composeRule.runOnIdle {
+                    assertEquals(
+                        if (expected == ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT) {
+                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                        },
+                        composeRule.activity.requestedOrientation,
+                    )
+                }
             }
         } finally {
             composeRule.runOnIdle { player.release() }

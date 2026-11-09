@@ -15,13 +15,27 @@ import dev.anilbeesetti.nextplayer.core.model.ScreenOrientation
 import dev.anilbeesetti.nextplayer.feature.player.extensions.isPortrait
 
 @Composable
-fun rememberRotationState(): RotationState? {
+fun rememberRotationState(resetKey: Any? = null): RotationState? {
     val activity = LocalActivity.current ?: return null
-    return remember(activity) { RotationState(activity = activity) }
+    return remember(
+        activity,
+        resetKey,
+    ) { RotationState(activity = activity) }
 }
 
 @Stable
 class RotationState(private val activity: Activity) {
+    var preserveOrientationOnVideoChange: Boolean = false
+        private set
+
+    fun preserveCurrentOrientation() {
+        preserveOrientationOnVideoChange = true
+        activity.requestedOrientation = when (activity.resources.configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        }
+    }
+
     fun rotate() {
         activity.requestedOrientation = when (activity.resources.configuration.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
@@ -37,6 +51,7 @@ fun PlayerOrientationEffect(
     player: Player,
     screenOrientation: ScreenOrientation,
     orientationOverride: Int? = null,
+    rotationState: RotationState? = null,
 ) {
     val activity = LocalActivity.current ?: return
     LaunchedEffect(
@@ -44,29 +59,35 @@ fun PlayerOrientationEffect(
         player,
         screenOrientation,
         orientationOverride,
+        rotationState,
     ) {
-        if (orientationOverride != null) {
-            activity.requestedOrientation = if (orientationOverride == 99999) {
-                activity.videoBasedOrientation(player)
-            } else {
-                orientationOverride
-            }
-        } else if (activity.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-            activity.requestedOrientation = when (screenOrientation) {
-                ScreenOrientation.AUTOMATIC -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        if (rotationState?.preserveOrientationOnVideoChange != true) {
+            if (orientationOverride != null) {
+                activity.requestedOrientation = if (orientationOverride == 99999) {
+                    activity.videoBasedOrientation(player)
+                } else {
+                    orientationOverride
+                }
+            } else if (activity.requestedOrientation ==
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            ) {
+                activity.requestedOrientation = when (screenOrientation) {
+                    ScreenOrientation.AUTOMATIC -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
 
-                ScreenOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    ScreenOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-                ScreenOrientation.LANDSCAPE_REVERSE ->
-                    ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                    ScreenOrientation.LANDSCAPE_REVERSE ->
+                        ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
 
-                ScreenOrientation.LANDSCAPE_AUTO -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    ScreenOrientation.LANDSCAPE_AUTO ->
+                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
-                ScreenOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                    ScreenOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
 
-                ScreenOrientation.VIDEO_ORIENTATION -> activity.videoBasedOrientation(
-                    player = player,
-                )
+                    ScreenOrientation.VIDEO_ORIENTATION -> activity.videoBasedOrientation(
+                        player = player,
+                    )
+                }
             }
         }
         player.listen { events ->
@@ -77,6 +98,7 @@ fun PlayerOrientationEffect(
                                 screenOrientation == ScreenOrientation.VIDEO_ORIENTATION
                             )
                     ) &&
+                rotationState?.preserveOrientationOnVideoChange != true &&
                 events.contains(Player.EVENT_VIDEO_SIZE_CHANGED)
             ) {
                 activity.requestedOrientation = activity.videoBasedOrientation(player)

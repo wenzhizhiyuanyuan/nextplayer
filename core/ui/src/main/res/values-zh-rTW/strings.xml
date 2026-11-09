@@ -510,4 +510,8 @@
     <plurals name="new_videos_count">
         <item quantity="other">%1$d 部新影片</item>
     </plurals>
+    <string name="left_swipe_gesture">左側縱向滑動</string>
+    <string name="right_swipe_gesture">右側縱向滑動</string>
+    <string name="playlist_swipe_gesture">上滑切換到下一集，下滑切換到上一集</string>
+    <string name="swipe_gesture_off">關閉</string>
 </resources>

@@ -542,4 +542,8 @@
     <string name="github_sponsors">GitHub Sponsors</string>
     <string name="reset_subtitle_position">重置字幕位置</string>
     <string name="reset_subtitle_position_desc">播放时上下拖动字幕可移动它们</string>
+    <string name="left_swipe_gesture">左侧纵向滑动</string>
+    <string name="right_swipe_gesture">右侧纵向滑动</string>
+    <string name="playlist_swipe_gesture">上滑切换到下一集，下滑切换到上一集</string>
+    <string name="swipe_gesture_off">关闭</string>
 </resources>

@@ -26,6 +26,9 @@ data class PlayerPreferences(
     val useSwipeControls: Boolean = true,
     val enableVolumeSwipeGesture: Boolean = true,
     val enableBrightnessSwipeGesture: Boolean = true,
+    // Null preserves the corresponding legacy gesture switch until explicitly configured.
+    val leftSwipeGesture: SwipeGesture? = null,
+    val rightSwipeGesture: SwipeGesture? = null,
     val useSeekControls: Boolean = true,
     val useZoomControls: Boolean = true,
     val enablePanGesture: Boolean = false,
@@ -63,6 +66,14 @@ data class PlayerPreferences(
     // Vertical distance from the default subtitle spot, as a fraction of the player height.
     val subtitleOffsetY: Float = 0f,
 ) {
+
+    val effectiveLeftSwipeGesture: SwipeGesture
+        get() = leftSwipeGesture
+            ?: if (enableBrightnessSwipeGesture) SwipeGesture.BRIGHTNESS else SwipeGesture.NONE
+
+    val effectiveRightSwipeGesture: SwipeGesture
+        get() = rightSwipeGesture
+            ?: if (enableVolumeSwipeGesture) SwipeGesture.VOLUME else SwipeGesture.NONE
 
     companion object {
         const val DEFAULT_SEEK_INCREMENT = 10

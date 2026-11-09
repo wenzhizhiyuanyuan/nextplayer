@@ -32,10 +32,12 @@ import dev.anilbeesetti.nextplayer.core.common.extensions.round
 import dev.anilbeesetti.nextplayer.core.common.extensions.toString
 import dev.anilbeesetti.nextplayer.core.model.DoubleTapGesture
 import dev.anilbeesetti.nextplayer.core.model.PlayerPreferences
+import dev.anilbeesetti.nextplayer.core.model.SwipeGesture
 import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.components.ListSectionTitle
 import dev.anilbeesetti.nextplayer.core.ui.components.NextDialogWithDoneAndCancelButtons
 import dev.anilbeesetti.nextplayer.core.ui.components.NextTopAppBar
+import dev.anilbeesetti.nextplayer.core.ui.components.PreferenceItem
 import dev.anilbeesetti.nextplayer.core.ui.components.PreferenceSlider
 import dev.anilbeesetti.nextplayer.core.ui.components.PreferenceSwitch
 import dev.anilbeesetti.nextplayer.core.ui.components.PreferenceSwitchWithDivider
@@ -69,6 +71,11 @@ private fun GesturePreferencesScreenContent(
     onAction: (GesturePreferencesUiEvent) -> Unit,
 ) {
     val listFocusRequester = rememberTvListFocusRequester()
+    val leftGesture = state.preferences.effectiveLeftSwipeGesture
+    val rightGesture = state.preferences.effectiveRightSwipeGesture
+    val brightnessEnabled = leftGesture == SwipeGesture.BRIGHTNESS ||
+        rightGesture == SwipeGesture.BRIGHTNESS
+    val volumeEnabled = leftGesture == SwipeGesture.VOLUME || rightGesture == SwipeGesture.VOLUME
     Scaffold(
         topBar = {
             NextTopAppBar(
@@ -140,13 +147,30 @@ private fun GesturePreferencesScreenContent(
                         }
                     },
                 )
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.brightness_gesture),
-                    description = stringResource(id = R.string.brightness_gesture_description),
+                PreferenceItem(
+                    title = stringResource(R.string.left_swipe_gesture),
+                    description = state.preferences.effectiveLeftSwipeGesture.label(),
                     icon = NextIcons.SwipeVertical,
-                    isChecked = state.preferences.enableBrightnessSwipeGesture,
+                    enabled = true,
                     onClick = {
-                        onAction(GesturePreferencesUiEvent.ToggleEnableBrightnessSwipeGesture)
+                        onAction(
+                            GesturePreferencesUiEvent.ShowDialog(
+                                GesturePreferenceDialog.SwipeDialog(left = true),
+                            ),
+                        )
+                    },
+                )
+                PreferenceItem(
+                    title = stringResource(R.string.right_swipe_gesture),
+                    description = state.preferences.effectiveRightSwipeGesture.label(),
+                    icon = NextIcons.SwipeVertical,
+                    enabled = true,
+                    onClick = {
+                        onAction(
+                            GesturePreferencesUiEvent.ShowDialog(
+                                GesturePreferenceDialog.SwipeDialog(left = false),
+                            ),
+                        )
                     },
                 )
                 PreferenceSlider(
@@ -155,7 +179,7 @@ private fun GesturePreferencesScreenContent(
                         decimalPlaces = 2,
                     ),
                     icon = NextIcons.Sensitivity,
-                    enabled = state.preferences.enableBrightnessSwipeGesture,
+                    enabled = brightnessEnabled,
                     value = state.preferences.brightnessGestureSensitivity,
                     valueRange = 0.1f..2.0f,
                     onValueChange = {
@@ -167,7 +191,7 @@ private fun GesturePreferencesScreenContent(
                     },
                     trailingContent = {
                         FilledIconButton(
-                            enabled = state.preferences.enableBrightnessSwipeGesture,
+                            enabled = brightnessEnabled,
                             onClick = {
                                 onAction(
                                     GesturePreferencesUiEvent.UpdateBrightnessGestureSensitivity(
@@ -185,22 +209,13 @@ private fun GesturePreferencesScreenContent(
                         }
                     },
                 )
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.volume_gesture),
-                    description = stringResource(id = R.string.volume_gesture_description),
-                    icon = NextIcons.SwipeVertical,
-                    isChecked = state.preferences.enableVolumeSwipeGesture,
-                    onClick = {
-                        onAction(GesturePreferencesUiEvent.ToggleEnableVolumeSwipeGesture)
-                    },
-                )
                 PreferenceSlider(
                     title = stringResource(R.string.volume_gesture_sensitivity),
                     description = state.preferences.volumeGestureSensitivity.toString(
                         decimalPlaces = 2,
                     ),
                     icon = NextIcons.Sensitivity,
-                    enabled = state.preferences.enableVolumeSwipeGesture,
+                    enabled = volumeEnabled,
                     value = state.preferences.volumeGestureSensitivity,
                     valueRange = 0.1f..2.0f,
                     onValueChange = {
@@ -210,7 +225,7 @@ private fun GesturePreferencesScreenContent(
                     },
                     trailingContent = {
                         FilledIconButton(
-                            enabled = state.preferences.enableVolumeSwipeGesture,
+                            enabled = volumeEnabled,
                             onClick = {
                                 onAction(
                                     GesturePreferencesUiEvent.UpdateVolumeGestureSensitivity(
@@ -316,6 +331,36 @@ private fun GesturePreferencesScreenContent(
 
         state.showDialog?.let { showDialog ->
             when (showDialog) {
+                is GesturePreferenceDialog.SwipeDialog -> {
+                    OptionsDialog(
+                        text = stringResource(
+                            if (showDialog.left) {
+                                R.string.left_swipe_gesture
+                            } else {
+                                R.string.right_swipe_gesture
+                            },
+                        ),
+                        onDismissClick = { onAction(GesturePreferencesUiEvent.ShowDialog(null)) },
+                    ) {
+                        items(SwipeGesture.entries.toTypedArray()) { gesture ->
+                            RadioTextButton(
+                                text = gesture.label(),
+                                selected =
+                                    gesture == if (showDialog.left) leftGesture else rightGesture,
+                                onClick = {
+                                    onAction(
+                                        GesturePreferencesUiEvent.UpdateSwipeGesture(
+                                            showDialog.left,
+                                            gesture,
+                                        ),
+                                    )
+                                    onAction(GesturePreferencesUiEvent.ShowDialog(null))
+                                },
+                            )
+                        }
+                    }
+                }
+
                 GesturePreferenceDialog.DoubleTapDialog -> {
                     OptionsDialog(
                         text = stringResource(id = R.string.double_tap),
@@ -382,6 +427,16 @@ private fun GesturePreferencesScreenContent(
         }
     }
 }
+
+@Composable
+private fun SwipeGesture.label(): String = stringResource(
+    when (this) {
+        SwipeGesture.BRIGHTNESS -> R.string.brightness_gesture
+        SwipeGesture.VOLUME -> R.string.volume_gesture
+        SwipeGesture.PLAYLIST -> R.string.playlist_swipe_gesture
+        SwipeGesture.NONE -> R.string.swipe_gesture_off
+    },
+)
 
 @DayNightPreview
 @Composable

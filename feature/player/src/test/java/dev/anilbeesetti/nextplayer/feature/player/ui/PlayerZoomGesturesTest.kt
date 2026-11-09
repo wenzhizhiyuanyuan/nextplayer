@@ -16,6 +16,7 @@ import androidx.compose.ui.test.pinch
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.exoplayer.ExoPlayer
 import dev.anilbeesetti.nextplayer.core.model.DoubleTapGesture
+import dev.anilbeesetti.nextplayer.core.model.SwipeGesture
 import dev.anilbeesetti.nextplayer.core.model.VideoContentScale
 import dev.anilbeesetti.nextplayer.feature.player.PlayerActivity
 import dev.anilbeesetti.nextplayer.feature.player.state.BrightnessState
@@ -101,6 +102,10 @@ class PlayerZoomGesturesTest {
                             scope,
                         ),
                         BrightnessState(brightnessActivity),
+                        leftGesture = SwipeGesture.BRIGHTNESS,
+                        rightGesture = SwipeGesture.VOLUME,
+                        playlistThresholdPx = 64f,
+                        onPlaylistSwipe = {},
                         volumeGestureSensitivity = 1f,
                         brightnessGestureSensitivity = 1f,
                         coroutineScope = scope,

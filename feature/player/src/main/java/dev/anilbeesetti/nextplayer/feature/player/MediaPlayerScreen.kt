@@ -123,8 +123,15 @@ internal fun MediaPlayerContent(
         rememberVolumeAndBrightnessGestureState(
             volumeState = volumeState,
             brightnessState = brightnessState,
-            enableVolumeGesture = playerPreferences.enableVolumeSwipeGesture,
-            enableBrightnessGesture = playerPreferences.enableBrightnessSwipeGesture,
+            leftGesture = playerPreferences.effectiveLeftSwipeGesture,
+            rightGesture = playerPreferences.effectiveRightSwipeGesture,
+            onPlaylistSwipe = { direction ->
+                if (direction > 0 && player.hasNextMediaItem()) {
+                    player.seekToNextMediaItem()
+                } else if (direction < 0 && player.hasPreviousMediaItem()) {
+                    player.seekToPreviousMediaItem()
+                }
+            },
             volumeGestureSensitivity = playerPreferences.volumeGestureSensitivity,
             brightnessGestureSensitivity = playerPreferences.brightnessGestureSensitivity,
         )

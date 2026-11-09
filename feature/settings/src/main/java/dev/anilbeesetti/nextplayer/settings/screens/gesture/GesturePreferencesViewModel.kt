@@ -6,6 +6,7 @@ import dev.anilbeesetti.nextplayer.core.common.extensions.round
 import dev.anilbeesetti.nextplayer.core.data.repository.PreferencesRepository
 import dev.anilbeesetti.nextplayer.core.model.DoubleTapGesture
 import dev.anilbeesetti.nextplayer.core.model.PlayerPreferences
+import dev.anilbeesetti.nextplayer.core.model.SwipeGesture
 import dev.anilbeesetti.nextplayer.core.ui.base.MviViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,11 +53,17 @@ class GesturePreferencesViewModel(
 
             is GesturePreferencesUiEvent.ToggleDoubleTapGesture -> toggleDoubleTapGesture()
 
-            is GesturePreferencesUiEvent.ToggleEnableBrightnessSwipeGesture ->
-                toggleEnableBrightnessSwipeGesture()
-
-            is GesturePreferencesUiEvent.ToggleEnableVolumeSwipeGesture ->
-                toggleEnableVolumeSwipeGesture()
+            is GesturePreferencesUiEvent.UpdateSwipeGesture -> viewModelScope.launch {
+                preferencesRepository.updatePlayerPreferences {
+                    if (action.left) {
+                        it.copy(
+                            leftSwipeGesture = action.gesture,
+                        )
+                    } else {
+                        it.copy(rightSwipeGesture = action.gesture)
+                    }
+                }
+            }
 
             is GesturePreferencesUiEvent.ToggleUseSeekControls -> toggleUseSeekControls()
 
@@ -115,22 +122,6 @@ class GesturePreferencesViewModel(
                         DoubleTapGesture.NONE
                     },
                 )
-            }
-        }
-    }
-
-    private fun toggleEnableBrightnessSwipeGesture() {
-        viewModelScope.launch {
-            preferencesRepository.updatePlayerPreferences {
-                it.copy(enableBrightnessSwipeGesture = !it.enableBrightnessSwipeGesture)
-            }
-        }
-    }
-
-    private fun toggleEnableVolumeSwipeGesture() {
-        viewModelScope.launch {
-            preferencesRepository.updatePlayerPreferences {
-                it.copy(enableVolumeSwipeGesture = !it.enableVolumeSwipeGesture)
             }
         }
     }
@@ -205,6 +196,7 @@ data class GesturePreferencesUiState(
 )
 
 sealed interface GesturePreferenceDialog {
+    data class SwipeDialog(val left: Boolean) : GesturePreferenceDialog
     data object DoubleTapDialog : GesturePreferenceDialog
     data object LongPressControlsSpeedDialog : GesturePreferenceDialog
 }
@@ -216,8 +208,8 @@ sealed interface GesturePreferencesUiEvent {
     data class UpdateDoubleTapGesture(val gesture: DoubleTapGesture) : GesturePreferencesUiEvent
     data object ToggleUseLongPressControls : GesturePreferencesUiEvent
     data object ToggleDoubleTapGesture : GesturePreferencesUiEvent
-    data object ToggleEnableBrightnessSwipeGesture : GesturePreferencesUiEvent
-    data object ToggleEnableVolumeSwipeGesture : GesturePreferencesUiEvent
+    data class UpdateSwipeGesture(val left: Boolean, val gesture: SwipeGesture) :
+        GesturePreferencesUiEvent
     data object ToggleUseSeekControls : GesturePreferencesUiEvent
     data object ToggleUseZoomControls : GesturePreferencesUiEvent
     data object ToggleEnablePanGesture : GesturePreferencesUiEvent

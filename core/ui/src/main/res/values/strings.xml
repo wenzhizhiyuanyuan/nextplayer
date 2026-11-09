@@ -563,4 +563,8 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+    <string name="left_swipe_gesture">Left-side vertical swipe</string>
+    <string name="right_swipe_gesture">Right-side vertical swipe</string>
+    <string name="playlist_swipe_gesture">Swipe up for next video, down for previous video</string>
+    <string name="swipe_gesture_off">Off</string>
 </resources>

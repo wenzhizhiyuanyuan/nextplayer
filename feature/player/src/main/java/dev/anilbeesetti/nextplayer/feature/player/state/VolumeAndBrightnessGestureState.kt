@@ -7,10 +7,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import dev.anilbeesetti.nextplayer.core.model.SwipeGesture
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -21,21 +25,31 @@ import kotlinx.coroutines.launch
 fun rememberVolumeAndBrightnessGestureState(
     volumeState: VolumeState,
     brightnessState: BrightnessState,
-    enableVolumeGesture: Boolean,
-    enableBrightnessGesture: Boolean,
+    leftGesture: SwipeGesture,
+    rightGesture: SwipeGesture,
+    onPlaylistSwipe: (Int) -> Unit,
     volumeGestureSensitivity: Float,
     brightnessGestureSensitivity: Float,
 ): VolumeAndBrightnessGestureState {
     val coroutineScope = rememberCoroutineScope()
+    val currentOnPlaylistSwipe by rememberUpdatedState(onPlaylistSwipe)
+    val playlistThresholdPx = with(LocalDensity.current) { 64.dp.toPx() }
     val volumeAndBrightnessGestureState = remember(
         volumeState,
         brightnessState,
+        leftGesture,
+        rightGesture,
+        volumeGestureSensitivity,
+        brightnessGestureSensitivity,
+        playlistThresholdPx,
     ) {
         VolumeAndBrightnessGestureState(
             volumeState = volumeState,
             brightnessState = brightnessState,
-            enableVolumeGesture = enableVolumeGesture,
-            enableBrightnessGesture = enableBrightnessGesture,
+            leftGesture = leftGesture,
+            rightGesture = rightGesture,
+            playlistThresholdPx = playlistThresholdPx,
+            onPlaylistSwipe = { currentOnPlaylistSwipe(it) },
             volumeGestureSensitivity = volumeGestureSensitivity,
             brightnessGestureSensitivity = brightnessGestureSensitivity,
             coroutineScope = coroutineScope,
@@ -48,8 +62,10 @@ fun rememberVolumeAndBrightnessGestureState(
 class VolumeAndBrightnessGestureState(
     private val volumeState: VolumeState,
     private val brightnessState: BrightnessState,
-    private val enableVolumeGesture: Boolean = true,
-    private val enableBrightnessGesture: Boolean = true,
+    private val leftGesture: SwipeGesture,
+    private val rightGesture: SwipeGesture,
+    playlistThresholdPx: Float,
+    private val onPlaylistSwipe: (Int) -> Unit,
     private val volumeGestureSensitivity: Float,
     private val brightnessGestureSensitivity: Float,
     private val coroutineScope: CoroutineScope,
@@ -63,6 +79,8 @@ class VolumeAndBrightnessGestureState(
     var brightnessChangePercentage: Int by mutableIntStateOf(value = 0)
         private set
 
+    private val playlistSwipe = PlaylistSwipeState(playlistThresholdPx)
+    private var gesture: SwipeGesture = SwipeGesture.NONE
     private var startingY = 0f
     private var startVolumePercentage = 0
     private var startBrightnessPercentage = 0
@@ -71,9 +89,12 @@ class VolumeAndBrightnessGestureState(
     fun onDragStart(offset: Offset, size: IntSize) {
         val viewCenterX = size.width / 2
         job?.cancel()
-        activeGesture = when {
-            offset.x < viewCenterX -> VerticalGesture.BRIGHTNESS.takeIf { enableBrightnessGesture }
-            else -> VerticalGesture.VOLUME.takeIf { enableVolumeGesture }
+        playlistSwipe.cancel()
+        gesture = if (offset.x < viewCenterX) leftGesture else rightGesture
+        activeGesture = when (gesture) {
+            SwipeGesture.BRIGHTNESS -> VerticalGesture.BRIGHTNESS
+            SwipeGesture.VOLUME -> VerticalGesture.VOLUME
+            else -> null
         }
         startingY = offset.y
         volumeState.syncWithSystem()
@@ -82,8 +103,12 @@ class VolumeAndBrightnessGestureState(
     }
 
     fun onDrag(change: PointerInputChange, dragAmount: Float) {
-        val activeGesture = activeGesture ?: return
         if (change.isConsumed) return
+        if (gesture == SwipeGesture.PLAYLIST) {
+            playlistSwipe.drag(dragAmount)
+            return
+        }
+        val activeGesture = activeGesture ?: return
 
         when (activeGesture) {
             VerticalGesture.VOLUME -> {
@@ -112,7 +137,19 @@ class VolumeAndBrightnessGestureState(
         }
     }
 
+    fun onDragCancel() {
+        playlistSwipe.cancel()
+        gesture = SwipeGesture.NONE
+        onDragEnd()
+    }
+
     fun onDragEnd() {
+        val direction = playlistSwipe.finish()
+        val completedGesture = gesture
+        gesture = SwipeGesture.NONE
+        if (completedGesture == SwipeGesture.PLAYLIST && direction != 0) {
+            onPlaylistSwipe(direction)
+        }
         startingY = 0f
         startVolumePercentage = 0
         startBrightnessPercentage = 0

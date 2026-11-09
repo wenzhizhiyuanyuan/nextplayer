@@ -142,6 +142,7 @@ fun PlayerGestures(
                     )
                 }
                 .pointerInput(
+                    volumeAndBrightnessGestureState,
                     gestureInsets,
                     density,
                     layoutDirection,
@@ -167,7 +168,7 @@ fun PlayerGestures(
                             )
                         },
                         onVerticalDrag = volumeAndBrightnessGestureState::onDrag,
-                        onDragCancel = volumeAndBrightnessGestureState::onDragEnd,
+                        onDragCancel = volumeAndBrightnessGestureState::onDragCancel,
                         onDragEnd = volumeAndBrightnessGestureState::onDragEnd,
                     )
                 }

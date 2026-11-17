@@ -179,8 +179,8 @@
     <string name="format">格式</string>
     <string name="volume_boost_desc">提升音量高達 200%</string>
     <string name="volume_boost">音量增幅器</string>
-    <string name="pip_settings">子母畫面模式</string>
-    <string name="pip_settings_description">輕觸主畫面按鈕時自動切換至迷你播放器</string>
+    <string name="pip_settings">自動浮窗播放</string>
+    <string name="pip_settings_description">返回桌面時繼續浮窗播放，需要允許顯示在其他應用程式上層</string>
     <string name="open_subtitle">開啟本機字幕</string>
     <string name="no_subtitle_tracks_found">該影片的字幕軌道不可用或不受支援。</string>
     <string name="no_audio_tracks_found">這部影片的音軌無法使用或不支援。</string>
@@ -517,4 +517,14 @@
     <string name="auto_fullscreen">自動全螢幕</string>
     <string name="auto_fullscreen_description">開始播放時自動依影片方向顯示：橫向影片橫向顯示，直向影片直向顯示</string>
     <string name="current_phone_orientation">手機目前方向</string>
+    <string name="floating_player_title">浮窗播放</string>
+    <string name="floating_player_drag">拖曳浮窗</string>
+    <string name="floating_player_previous">上一集</string>
+    <string name="floating_player_pause">暫停</string>
+    <string name="floating_player_play">播放</string>
+    <string name="floating_player_next">下一集</string>
+    <string name="floating_player_expand">返回</string>
+    <string name="floating_player_close">關閉</string>
+    <string name="floating_player_permission">請允許顯示在其他應用程式上層，以使用浮窗播放</string>
+    <string name="floating_player_open_failed">無法開啟浮窗播放器</string>
 </resources>

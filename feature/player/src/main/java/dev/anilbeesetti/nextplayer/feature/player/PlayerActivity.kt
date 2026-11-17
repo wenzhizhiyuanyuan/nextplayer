@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
@@ -14,6 +15,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +42,7 @@ import dev.anilbeesetti.nextplayer.core.ui.R as coreUiR
 import dev.anilbeesetti.nextplayer.core.ui.theme.NextPlayerTheme
 import dev.anilbeesetti.nextplayer.feature.player.extensions.OpenDocumentAtInitialUri
 import dev.anilbeesetti.nextplayer.feature.player.extensions.uriToSubtitleConfiguration
+import dev.anilbeesetti.nextplayer.feature.player.floating.FloatingPlayerWindow
 import dev.anilbeesetti.nextplayer.feature.player.service.CustomCommands
 import dev.anilbeesetti.nextplayer.feature.player.service.PlayerService
 import dev.anilbeesetti.nextplayer.feature.player.service.addAudioTrack
@@ -98,6 +101,55 @@ class PlayerActivity : ComponentActivity() {
     private var lastPosition = C.TIME_UNSET
     private var lastMediaUri: Uri? = null
     private var lastDecoder: DecoderMode? = null
+    private var floatingWindowRequested = false
+    private var waitingForOverlayPermission = false
+    private var returningFromFloatingWindow = false
+    private val overlayPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        waitingForOverlayPermission = false
+        if (Settings.canDrawOverlays(this)) enterFloatingWindow()
+    }
+
+    fun enterFloatingWindow() {
+        if (!Settings.canDrawOverlays(this)) {
+            waitingForOverlayPermission = true
+            Toast.makeText(
+                this,
+                coreUiR.string.floating_player_permission,
+                Toast.LENGTH_LONG,
+            ).show()
+            runCatching {
+                overlayPermissionLauncher.launch(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName"),
+                    ),
+                )
+            }.onFailure {
+                waitingForOverlayPermission = false
+                Toast.makeText(
+                    this,
+                    coreUiR.string.floating_player_open_failed,
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+            return
+        }
+        floatingWindowRequested = true
+        if (mediaController != null && !moveTaskToBack(true)) floatingWindowRequested = false
+    }
+
+    override fun onUserLeaveHint() {
+        if (!waitingForOverlayPermission && !subtitleFileSuspendLauncher.isAwaitingResult &&
+            !audioFileSuspendLauncher.isAwaitingResult && playerPreferences.autoPip &&
+            mediaController?.isPlaying == true && Settings.canDrawOverlays(this)
+        ) {
+            floatingWindowRequested = true
+        }
+        super.onUserLeaveHint()
+    }
+
     private var playInBackground: Boolean = false
     private var isIntentNew: Boolean = true
     private var backgroundLaunchAccepted = false
@@ -179,6 +231,10 @@ class PlayerActivity : ComponentActivity() {
         if (request.launchInBackground) setTheme(R.style.NextPlayer_Background)
         super.onCreate(savedInstanceState)
         activityCreated = true
+        returningFromFloatingWindow = intent.getBooleanExtra(
+            FloatingPlayerWindow.EXTRA_RETURN_TO_PLAYER,
+            false,
+        )
         playerApi = request
         if (request.launchInBackground && intent.data == null) {
             playbackFailed = true
@@ -233,7 +289,16 @@ class PlayerActivity : ComponentActivity() {
                 )
                 if (!playerApi.launchInBackground) player.addListener(playbackStateListener)
                 updateKeepScreenOnFlag()
+                player.sendCustomCommand(
+                    CustomCommands.HIDE_FLOATING_PLAYER.sessionCommand,
+                    Bundle.EMPTY,
+                )
                 startPlayback()
+                if (floatingWindowRequested &&
+                    !moveTaskToBack(true)
+                ) {
+                    floatingWindowRequested = false
+                }
             }
 
             if (!playerApi.launchInBackground) {
@@ -375,7 +440,15 @@ class PlayerActivity : ComponentActivity() {
             viewModel.onAction(PlayerAction.UpdatePlayWhenReady(playWhenReady))
             removeListener(playbackStateListener)
             val shouldPlayInBackground =
-                playInBackground || (playerApi.sticky ?: playerPreferences.autoBackgroundPlay)
+                floatingWindowRequested || playInBackground ||
+                    (playerApi.sticky ?: playerPreferences.autoBackgroundPlay)
+            if (floatingWindowRequested) {
+                sendCustomCommand(
+                    CustomCommands.SHOW_FLOATING_PLAYER.sessionCommand,
+                    Bundle.EMPTY,
+                )
+                floatingWindowRequested = false
+            }
             if (subtitleFileSuspendLauncher.isAwaitingResult ||
                 audioFileSuspendLauncher.isAwaitingResult ||
                 !shouldPlayInBackground
@@ -393,6 +466,13 @@ class PlayerActivity : ComponentActivity() {
 
     private fun startPlayback() {
         val controller = mediaController ?: return
+        if (returningFromFloatingWindow) {
+            returningFromFloatingWindow = false
+            isIntentNew = false
+            intent.data = controller.currentMediaItem?.localConfiguration?.uri
+            viewModel.onAction(PlayerAction.UpdatePlayWhenReady(controller.playWhenReady))
+            return
+        }
         if (!isIntentNew &&
             (controller.currentMediaItem == null || controller.playbackState == Player.STATE_ENDED)
         ) {
@@ -620,6 +700,14 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.getBooleanExtra(
+                FloatingPlayerWindow.EXTRA_RETURN_TO_PLAYER,
+                false,
+            )
+        ) {
+            returningFromFloatingWindow = true
+            return
+        }
         if (intent.data != null) {
             val previousBackgroundMode = playerApi.launchInBackground
             playbackRequestJob?.cancel()
@@ -640,7 +728,16 @@ class PlayerActivity : ComponentActivity() {
             if (activityCreated && previousBackgroundMode != playerApi.launchInBackground) {
                 recreate()
             } else {
+                mediaController?.sendCustomCommand(
+                    CustomCommands.HIDE_FLOATING_PLAYER.sessionCommand,
+                    Bundle.EMPTY,
+                )
                 startPlayback()
+                if (floatingWindowRequested &&
+                    !moveTaskToBack(true)
+                ) {
+                    floatingWindowRequested = false
+                }
             }
         }
     }

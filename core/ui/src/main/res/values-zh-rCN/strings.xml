@@ -194,8 +194,8 @@
     <string name="format">格式</string>
     <string name="volume_boost_desc">将音量增强到最大 200%</string>
     <string name="volume_boost">音量增强</string>
-    <string name="pip_settings">画中画模式</string>
-    <string name="pip_settings_description">返回主屏幕时自动切换到迷你播放器</string>
+    <string name="pip_settings">自动浮窗播放</string>
+    <string name="pip_settings_description">返回桌面时继续浮窗播放，需要允许显示在其他应用上层</string>
     <string name="open_subtitle">打开本地字幕</string>
     <string name="no_subtitle_tracks_found">此视频的字幕不可用或不受支持</string>
     <string name="no_audio_tracks_found">此视频的音轨不可用或不受支持</string>
@@ -549,4 +549,14 @@
     <string name="auto_fullscreen">自动全屏</string>
     <string name="auto_fullscreen_description">开始播放时自动按视频方向显示：横版横屏，竖版竖屏</string>
     <string name="current_phone_orientation">手机当前方向</string>
+    <string name="floating_player_title">浮窗播放</string>
+    <string name="floating_player_drag">拖动浮窗</string>
+    <string name="floating_player_previous">上一集</string>
+    <string name="floating_player_pause">暂停</string>
+    <string name="floating_player_play">播放</string>
+    <string name="floating_player_next">下一集</string>
+    <string name="floating_player_expand">返回</string>
+    <string name="floating_player_close">关闭</string>
+    <string name="floating_player_permission">请允许显示在其他应用上层，以使用浮窗播放</string>
+    <string name="floating_player_open_failed">无法打开浮窗播放器</string>
 </resources>

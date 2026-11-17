@@ -1,6 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player
 
-import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -15,7 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,7 +23,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.theme.NextPlayerTheme
 import dev.anilbeesetti.nextplayer.feature.player.state.ControlsVisibilityState
 import dev.anilbeesetti.nextplayer.feature.player.state.PlayerOrientationEffect
@@ -87,7 +85,7 @@ internal fun MediaPlayerContent(
         Box(Modifier.fillMaxSize().background(Color.Black))
         return
     }
-    val context = LocalContext.current
+    val activity = LocalActivity.current as? PlayerActivity
     val controlsVisibilityState = rememberControlsVisibilityState(
         player = player,
         hideAfter = playerPreferences.controllerAutoHideTimeout.seconds,
@@ -107,7 +105,7 @@ internal fun MediaPlayerContent(
     val pictureInPictureState = if (!isPreview) {
         rememberPictureInPictureState(
             player = player,
-            autoEnter = playerPreferences.autoPip,
+            autoEnter = false,
         )
     } else {
         null
@@ -235,21 +233,8 @@ internal fun MediaPlayerContent(
             seekGestureState = seekGestureState,
             videoZoomAndContentScaleState = videoZoomAndContentScaleState,
             dpadUpDown = api?.dpadUpDown,
-            isPipSupported = pictureInPictureState?.isPipSupported == true,
-            onPictureInPictureClick = {
-                pictureInPictureState?.let {
-                    if (!it.hasPipPermission) {
-                        Toast.makeText(
-                            context,
-                            R.string.enable_pip_from_settings,
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                        it.openPictureInPictureSettings()
-                    } else {
-                        it.enterPictureInPictureMode()
-                    }
-                }
-            },
+            isPipSupported = activity != null,
+            onPictureInPictureClick = { activity?.enterFloatingWindow() },
         )
         if (volumeAndBrightnessGestureState != null && volumeState != null &&
             brightnessState != null

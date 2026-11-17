@@ -3,9 +3,12 @@ package dev.anilbeesetti.nextplayer.feature.player.service
 import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.Intent
+import android.content.res.Configuration
 import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import android.os.Bundle
+import android.os.Process
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
@@ -72,6 +75,7 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.uriToSubtitleConfig
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoDecoderMode
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoZoom
 import dev.anilbeesetti.nextplayer.feature.player.extensions.withExternalAudio
+import dev.anilbeesetti.nextplayer.feature.player.floating.FloatingPlayerWindow
 import dev.anilbeesetti.nextplayer.feature.player.model.DecoderTrackType
 import dev.anilbeesetti.nextplayer.feature.player.utils.hasApiPosition
 import dev.anilbeesetti.nextplayer.feature.player.utils.isExplicitPlaylistItem
@@ -100,6 +104,12 @@ import org.koin.core.qualifier.named
 
 @OptIn(UnstableApi::class)
 class PlayerService : MediaSessionService() {
+    private var floatingWindow: FloatingPlayerWindow? = null
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        floatingWindow?.updateSize()
+    }
 
     private val serviceScope: CoroutineScope = CoroutineScope(
         context =
@@ -816,6 +826,31 @@ class PlayerService : MediaSessionService() {
                     )
                 }
 
+                CustomCommands.SHOW_FLOATING_PLAYER, CustomCommands.HIDE_FLOATING_PLAYER -> {
+                    if (controller.uid != Process.myUid()) {
+                        return@future SessionResult(SessionError.ERROR_PERMISSION_DENIED)
+                    }
+                    if (command == CustomCommands.HIDE_FLOATING_PLAYER) {
+                        floatingWindow?.hide()
+                    } else {
+                        val window = floatingWindow ?: FloatingPlayerWindow(
+                            this@PlayerService,
+                            session.player,
+                            onClose = { serviceScope.launch { savePositionAndStopSession() } },
+                        ).also { floatingWindow = it }
+                        if (!window.show()) {
+                            session.player.pause()
+                            Toast.makeText(
+                                this@PlayerService,
+                                coreUiR.string.floating_player_open_failed,
+                                Toast.LENGTH_LONG,
+                            ).show()
+                            return@future SessionResult(SessionError.ERROR_INVALID_STATE)
+                        }
+                    }
+                    return@future SessionResult(SessionResult.RESULT_SUCCESS)
+                }
+
                 CustomCommands.STOP_PLAYER_SESSION -> {
                     savePositionAndStopSession()
                     return@future SessionResult(SessionResult.RESULT_SUCCESS)
@@ -1001,6 +1036,7 @@ class PlayerService : MediaSessionService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        if (floatingWindow?.isShowing == true) return
         val player = mediaSession?.player ?: return
         if (!player.playWhenReady || player.mediaItemCount == 0 ||
             player.playbackState == Player.STATE_ENDED
@@ -1010,6 +1046,7 @@ class PlayerService : MediaSessionService() {
     }
 
     private suspend fun savePositionAndStopSession() {
+        floatingWindow?.hide()
         cancelPendingMediaItems()
         val generation = ++playbackRequestGeneration
         mediaSession?.run {
@@ -1037,6 +1074,8 @@ class PlayerService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        floatingWindow?.hide()
+        floatingWindow = null
         cancelPendingMediaItems()
         super.onDestroy()
         artworkLoadJob?.cancel()

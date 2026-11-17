@@ -232,7 +232,7 @@ fun ControlsBottomView(
                 PlayerButton(onClick = onPictureInPictureClick) {
                     Icon(
                         painter = painterResource(R.drawable.ic_pip),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.floating_player_title),
                     )
                 }
             }

@@ -54,6 +54,54 @@ the [Issues](https://github.com/anilbeesetti/nextplayer/issues) section.**
 [<img src="fastlane/metadata/android/en-US/images/tvScreenshots/4.png" width=49% alt="TV appearance settings">](fastlane/metadata/android/en-US/images/tvScreenshots/4.png)
 </div>
 
+## Playback improvements in this fork
+
+The following changes are available on this fork's `dev` branch. The upstream
+store and release links above do not necessarily include them.
+
+### Configurable vertical swipes
+
+In **Settings → Gestures**, configure the left and right sides independently:
+brightness, volume, playlist navigation, or off. The defaults remain left-side
+brightness and right-side volume; previously disabled gestures remain disabled.
+
+For playlist navigation, swipe up for the next video and down for the previous
+video. A swipe must pass the distance threshold and finish before switching;
+each swipe changes at most one item. Switching by swipe preserves the current
+screen orientation, and unavailable adjacent items are ignored.
+
+### Automatic fullscreen
+
+In **Settings → Player**, **Auto fullscreen** selects the video orientation:
+landscape videos open in landscape and portrait videos open in portrait. Turning
+it off selects **Current phone orientation**, keeping the phone's orientation
+when playback starts. This is the default for new or unset orientation preferences;
+previously saved explicit orientation choices are retained.
+
+The toggle stays in sync with **Player screen orientation**, and manual rotation
+remains available. New settings include English, Simplified Chinese, and Traditional
+Chinese text.
+
+### Floating playback
+
+The player window button opens a custom floating player instead of system
+picture-in-picture. On first use, allow **Display over other apps** in Android
+settings, then return to the player. **Settings → Player → Automatic floating
+player** also enables floating playback when returning to the home screen after
+permission has been granted.
+
+The floating window uses the screen width in portrait orientation, even when the
+phone is in landscape. Its height follows the video aspect ratio, with limits to
+keep the window and controls on-screen; the video is fitted without cropping.
+Drag the title bar to move the window.
+
+Controls include **Previous**, **Play/Pause**, **Next**, **Expand**, and **Close**.
+Previous and next follow the current playlist and are disabled when no adjacent
+item is available.
+Expand returns to the player with the current video, position, and playback state.
+Close saves the playback position and stops the session. Paused floating playback
+allows the screen to turn off after its normal timeout.
+
 ## Player intent API
 
 Next Player supports MX Player-compatible VIEW intents, with additional playback
@@ -77,7 +125,7 @@ and compatibility details.
 - Completely free and open source and without any ads or excessive permissions
 - Software decoders for h264 and hevc
 - Audio/Subtitle track selection
-- Vertical swipe to change brightness (left) / volume (right)
+- Configurable left/right vertical swipes for brightness, volume, playlist navigation, or no action
 - Horizontal swipe to seek through video
 - [Material 3 (You)](https://m3.material.io/) support
 - Media picker with tree, folder and file view modes
@@ -86,7 +134,8 @@ and compatibility details.
 - Control playback speed
 - External Subtitle support
 - Zoom gesture
-- Picture-in-picture mode
+- Custom floating player with playlist controls and portrait-screen-width sizing
+- Optional automatic fullscreen based on video orientation
 - Background playback
 - Android TV version
 - Search Functionality

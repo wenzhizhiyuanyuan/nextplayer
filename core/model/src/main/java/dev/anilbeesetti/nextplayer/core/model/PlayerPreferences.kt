@@ -9,7 +9,7 @@ data class PlayerPreferences(
     val playerBrightness: Float = 0.5f,
     val minDurationForFastSeek: Long = 120000L,
     val rememberSelections: Boolean = true,
-    val playerScreenOrientation: ScreenOrientation = ScreenOrientation.VIDEO_ORIENTATION,
+    val playerScreenOrientation: ScreenOrientation = ScreenOrientation.CURRENT_ORIENTATION,
     val playerVideoZoom: VideoContentScale = VideoContentScale.BEST_FIT,
     val defaultPlaybackSpeed: Float = 1.0f,
     val autoplay: Boolean = true,

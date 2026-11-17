@@ -8,6 +8,19 @@ import org.junit.Test
 
 class PlayerPreferencesTest {
     @Test
+    fun `orientation defaults to phone direction and preserves explicit choices`() {
+        assertEquals(
+            ScreenOrientation.CURRENT_ORIENTATION,
+            Json.decodeFromString<PlayerPreferences>("{}").playerScreenOrientation,
+        )
+        val saved = PlayerPreferences(playerScreenOrientation = ScreenOrientation.VIDEO_ORIENTATION)
+        assertEquals(
+            saved,
+            Json.decodeFromString<PlayerPreferences>(Json.encodeToString(saved)),
+        )
+    }
+
+    @Test
     fun `legacy swipe switches keep their behavior`() {
         val defaults = Json.decodeFromString<PlayerPreferences>("{}")
         assertEquals(

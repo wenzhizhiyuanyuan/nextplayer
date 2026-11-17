@@ -8,6 +8,7 @@ import dev.anilbeesetti.nextplayer.core.ui.R
 @Composable
 fun ScreenOrientation.name(): String {
     val stringRes = when (this) {
+        ScreenOrientation.CURRENT_ORIENTATION -> R.string.current_phone_orientation
         ScreenOrientation.AUTOMATIC -> R.string.automatic
         ScreenOrientation.LANDSCAPE -> R.string.landscape
         ScreenOrientation.LANDSCAPE_REVERSE -> R.string.landscape_reverse

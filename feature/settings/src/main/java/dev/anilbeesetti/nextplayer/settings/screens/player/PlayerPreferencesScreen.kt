@@ -244,6 +244,14 @@ private fun PlayerPreferencesScreenContent(
                     isChecked = state.preferences.rememberSelections,
                     onClick = { onAction(PlayerPreferencesUiEvent.ToggleRememberSelections) },
                 )
+                PreferenceSwitch(
+                    title = stringResource(R.string.auto_fullscreen),
+                    description = stringResource(R.string.auto_fullscreen_description),
+                    icon = NextIcons.Rotation,
+                    isChecked = state.preferences.playerScreenOrientation ==
+                        ScreenOrientation.VIDEO_ORIENTATION,
+                    onClick = { onAction(PlayerPreferencesUiEvent.ToggleAutoFullscreen) },
+                )
                 ClickablePreferenceItem(
                     title = stringResource(id = R.string.player_screen_orientation),
                     description = state.preferences.playerScreenOrientation.name(),

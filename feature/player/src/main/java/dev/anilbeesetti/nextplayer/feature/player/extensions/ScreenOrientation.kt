@@ -4,6 +4,8 @@ import android.content.pm.ActivityInfo
 import dev.anilbeesetti.nextplayer.core.model.ScreenOrientation
 
 fun ScreenOrientation.toActivityOrientation(videoOrientation: Int? = null): Int = when (this) {
+    ScreenOrientation.CURRENT_ORIENTATION -> ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
     ScreenOrientation.AUTOMATIC -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
 
     ScreenOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE

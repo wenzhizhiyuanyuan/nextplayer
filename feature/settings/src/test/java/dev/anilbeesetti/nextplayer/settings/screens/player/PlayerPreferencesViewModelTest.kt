@@ -1,6 +1,7 @@
 package dev.anilbeesetti.nextplayer.settings.screens.player
 
 import dev.anilbeesetti.nextplayer.core.data.repository.fake.FakePreferencesRepository
+import dev.anilbeesetti.nextplayer.core.model.ScreenOrientation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -29,6 +30,31 @@ class PlayerPreferencesViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    @Test
+    fun autoFullscreenToggleUsesVideoOrientationAndRestoresPhoneDirection() =
+        runTest(context = dispatcher) {
+            val viewModel = PlayerPreferencesViewModel(
+                preferencesRepository = repository,
+                output = PlayerPreferencesViewModel.Output(navigateUp = {}),
+            )
+            assertEquals(
+                ScreenOrientation.CURRENT_ORIENTATION,
+                viewModel.state.value.preferences.playerScreenOrientation,
+            )
+            viewModel.onAction(PlayerPreferencesUiEvent.ToggleAutoFullscreen)
+            advanceUntilIdle()
+            assertEquals(
+                ScreenOrientation.VIDEO_ORIENTATION,
+                repository.playerPreferences.value.playerScreenOrientation,
+            )
+            viewModel.onAction(PlayerPreferencesUiEvent.ToggleAutoFullscreen)
+            advanceUntilIdle()
+            assertEquals(
+                ScreenOrientation.CURRENT_ORIENTATION,
+                viewModel.state.value.preferences.playerScreenOrientation,
+            )
+        }
 
     @Test
     fun toggleTunneledPlaybackUpdatesRepositoryAndScreenState() = runTest(context = dispatcher) {

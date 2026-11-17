@@ -567,4 +567,7 @@
     <string name="right_swipe_gesture">Right-side vertical swipe</string>
     <string name="playlist_swipe_gesture">Swipe up for next video, down for previous video</string>
     <string name="swipe_gesture_off">Off</string>
+    <string name="auto_fullscreen">Auto fullscreen</string>
+    <string name="auto_fullscreen_description">Automatically match the screen orientation to the video when playback starts</string>
+    <string name="current_phone_orientation">Current phone orientation</string>
 </resources>

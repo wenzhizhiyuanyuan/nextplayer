@@ -72,6 +72,14 @@ fun PlayerOrientationEffect(
                 ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             ) {
                 activity.requestedOrientation = when (screenOrientation) {
+                    ScreenOrientation.CURRENT_ORIENTATION ->
+                        when (activity.resources.configuration.orientation) {
+                            Configuration.ORIENTATION_LANDSCAPE ->
+                                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+                            else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                        }
+
                     ScreenOrientation.AUTOMATIC -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
 
                     ScreenOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE

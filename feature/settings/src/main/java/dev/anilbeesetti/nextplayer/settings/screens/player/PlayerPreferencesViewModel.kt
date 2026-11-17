@@ -50,6 +50,20 @@ class PlayerPreferencesViewModel(
 
             is PlayerPreferencesUiEvent.ToggleAutoplay -> toggleAutoplay()
 
+            is PlayerPreferencesUiEvent.ToggleAutoFullscreen -> viewModelScope.launch {
+                preferencesRepository.updatePlayerPreferences {
+                    it.copy(
+                        playerScreenOrientation = if (it.playerScreenOrientation ==
+                            ScreenOrientation.VIDEO_ORIENTATION
+                        ) {
+                            ScreenOrientation.CURRENT_ORIENTATION
+                        } else {
+                            ScreenOrientation.VIDEO_ORIENTATION
+                        },
+                    )
+                }
+            }
+
             is PlayerPreferencesUiEvent.ToggleTunneledPlayback -> toggleTunneledPlayback()
 
             is PlayerPreferencesUiEvent.ToggleAutoPip -> toggleAutoPip()
@@ -202,6 +216,7 @@ sealed interface PlayerPreferencesUiEvent {
     data class ShowDialog(val value: PlayerPreferenceDialog?) : PlayerPreferencesUiEvent
     data class UpdatePlaybackResume(val resume: Resume) : PlayerPreferencesUiEvent
     data object ToggleAutoplay : PlayerPreferencesUiEvent
+    data object ToggleAutoFullscreen : PlayerPreferencesUiEvent
     data object ToggleTunneledPlayback : PlayerPreferencesUiEvent
     data object ToggleAutoPip : PlayerPreferencesUiEvent
     data object ToggleAutoBackgroundPlay : PlayerPreferencesUiEvent

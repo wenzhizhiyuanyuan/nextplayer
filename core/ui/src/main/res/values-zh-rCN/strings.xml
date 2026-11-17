@@ -546,4 +546,7 @@
     <string name="right_swipe_gesture">右侧纵向滑动</string>
     <string name="playlist_swipe_gesture">上滑切换到下一集，下滑切换到上一集</string>
     <string name="swipe_gesture_off">关闭</string>
+    <string name="auto_fullscreen">自动全屏</string>
+    <string name="auto_fullscreen_description">开始播放时自动按视频方向显示：横版横屏，竖版竖屏</string>
+    <string name="current_phone_orientation">手机当前方向</string>
 </resources>

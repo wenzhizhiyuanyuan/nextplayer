@@ -33,6 +33,78 @@ class RotateButtonTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
+    fun phoneDirectionIgnoresVideoOrientationWhenAutoFullscreenIsOff() {
+        val player = composeRule.runOnIdle { TestPlayer() }
+        val selectedOrientation = mutableStateOf(ScreenOrientation.CURRENT_ORIENTATION)
+        try {
+            composeRule.runOnIdle {
+                composeRule.activity.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                composeRule.activity.resources.configuration.orientation =
+                    Configuration.ORIENTATION_PORTRAIT
+            }
+            composeRule.setContent {
+                PlayerOrientationEffect(
+                    player,
+                    selectedOrientation.value,
+                )
+            }
+            composeRule.runOnIdle {
+                assertEquals(
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
+                    composeRule.activity.requestedOrientation,
+                )
+                player.updateVideoSize(
+                    VideoSize(
+                        360,
+                        640,
+                    ),
+                )
+            }
+            composeRule.runOnIdle {
+                player.updateVideoSize(
+                    VideoSize(
+                        640,
+                        360,
+                    ),
+                )
+            }
+            composeRule.runOnIdle {
+                assertEquals(
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
+                    composeRule.activity.requestedOrientation,
+                )
+                composeRule.activity.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                composeRule.activity.resources.configuration.orientation =
+                    Configuration.ORIENTATION_LANDSCAPE
+                selectedOrientation.value = ScreenOrientation.AUTOMATIC
+            }
+            composeRule.runOnIdle {
+                composeRule.activity.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                selectedOrientation.value = ScreenOrientation.CURRENT_ORIENTATION
+            }
+            composeRule.runOnIdle {
+                player.updateVideoSize(
+                    VideoSize(
+                        360,
+                        640,
+                    ),
+                )
+            }
+            composeRule.runOnIdle {
+                assertEquals(
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+                    composeRule.activity.requestedOrientation,
+                )
+            }
+        } finally {
+            composeRule.runOnIdle { player.release() }
+        }
+    }
+
+    @Test
     fun videoOrientationContinuesFollowingVideoSizeWithoutRotateButton() {
         val player = composeRule.runOnIdle { TestPlayer() }
         try {
